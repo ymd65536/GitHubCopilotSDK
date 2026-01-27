@@ -40,7 +40,7 @@ async def main():
     session.on(handle_event)
 
     await session.send_and_wait({
-        "prompt": "What's the weather like in Seattle and Tokyo?"
+        "prompt": "シアトルと東京の天気を比較して教えてください。",
     })
 
     await client.stop()
