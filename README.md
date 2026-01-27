@@ -25,7 +25,20 @@ copilot --version
 # Commit: 4b4fe6e
 ```
 
+## トラブルシューティング
+
+ここからはよくあるトラブルシューティングをまとめていきます。
+
+## Copilot CLIがインストールされていない場合
+
+Copilot CLIがインストールされていない場合には以下のようなエラーが発生します。
+
+```text
+TypeError: unsupported operand type(s) for |: '_TypedDictMeta' and 'types.GenericAlias'
+```
+
 ## 参考
 
 - [cookbook](https://github.com/github/copilot-sdk/blob/main/cookbook/python/README.md)
-
+- [GitHub Copilot CLI について](https://docs.github.com/ja/copilot/concepts/agents/about-copilot-cli)
+- [GitHub Copilot SDKの発表](https://github.blog/jp/2026-01-23-build-an-agent-into-any-app-with-the-github-copilot-sdk/)
