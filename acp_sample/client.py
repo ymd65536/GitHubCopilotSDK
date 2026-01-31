@@ -10,6 +10,7 @@ from acp.schema import (
     ClientCapabilities,
     Implementation,
     AgentMessageChunk,
+    AgentThoughtChunk,
     TextContentBlock,
 )
 
