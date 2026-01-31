@@ -24,7 +24,6 @@ async def main():
     await client.start()
 
     session = await client.create_session({
-        "model": "gpt-4.1",
         "streaming": True,
         "tools": [get_weather],
     })
