@@ -122,6 +122,17 @@ python python/interactive_server.py
 
 これでサーバーモードで対話が始まります。（対話の始まり！！！）
 
+## dockerで動かす
+
+```bash
+cd on_docker
+```
+
+```bash
+docker build -t copilot-server .
+docker run -p 4321:4321 copilot-server
+```
+
 ## トラブルシューティング
 
 ここからはよくあるトラブルシューティングをまとめていきます。
