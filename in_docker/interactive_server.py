@@ -19,7 +19,7 @@ async def get_weather(params: GetWeatherParams) -> dict:
 
 async def main():
     client = CopilotClient({
-        "cli_url": "0.0.0.0:4321"
+        "cli_url": "localhost:4321"
     })
     await client.start()
 
