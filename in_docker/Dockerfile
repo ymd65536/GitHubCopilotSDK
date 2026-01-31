@@ -23,8 +23,8 @@ RUN useradd -m -s /bin/bash developer
 USER developer
 WORKDIR /home/developer
 
-# ポート4321を公開
-EXPOSE 4321
+CMD ["/bin/bash"]
 
-# Copilotサーバーをポート4321で起動（外部アクセス可能にするため0.0.0.0でリッスン）
-CMD ["copilot", "--server", "--port", "4321"]
+# コンテナ起動後の使用方法:
+# 1. gh auth login
+# 2. copilot -i "hello world"

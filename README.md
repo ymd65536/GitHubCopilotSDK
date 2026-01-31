@@ -125,12 +125,12 @@ python python/interactive_server.py
 ## dockerで動かす
 
 ```bash
-cd on_docker
+cd in_docker
 ```
 
 ```bash
 docker build -t copilot-server .
-docker run -p 4321:4321 copilot-server
+docker run -p 4321:4321 -it --rm copilot-sdk /bin/bash
 ```
 
 ## トラブルシューティング
