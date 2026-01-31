@@ -1,6 +1,7 @@
 import os
 import asyncio
 from acp import Client, connect_to_agent, text_block, PROTOCOL_VERSION
+from acp.exceptions import RequestError
 from acp.schema import (
     WriteTextFileResponse, 
     AgentMessageChunk, 
@@ -26,6 +27,31 @@ class MyClient(Client):
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
         return WriteTextFileResponse()
+
+    async def ext_method(self, method: str, params: dict) -> dict:
+        """
+        SDKで明示的に定義されていないメソッド（エージェント独自のコマンド）を処理する
+        """
+        # エージェントが 'create' という名前で送ってきた場合
+        if method == "create" or "write" in method:
+            print(f"\n[Hooked Custom Tool] Method: {method}, Params: {params}")
+            
+            # 引数からパスと内容を抽出（エージェントによってキー名が異なる場合があります）
+            path = params.get("path") or params.get("filename")
+            content = params.get("content") or params.get("text")
+            
+            if path and content:
+                # 既存の書き込みロジックを再利用
+                result = await self.write_text_file(
+                    content=content,
+                    path=path,
+                    session_id="current-session"
+                )
+                return {} # 成功時は空の辞書を返す（schema上のAnyに対応）
+        
+        # それ以外はエラーを返す
+        raise RequestError.method_not_found(method)
+
 
 async def main():
     PORT = 4321
@@ -66,7 +92,7 @@ async def main():
 
     await conn.prompt(
         session_id=session.session_id,
-        prompt=[text_block("fs/write_text_file を使って hello.txt を作成してください。")]
+        prompt=[text_block("createツール を使って hello.txt を作成してください。")]
     )
     
     await asyncio.sleep(10)
