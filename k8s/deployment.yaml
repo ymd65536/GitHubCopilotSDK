@@ -19,12 +19,11 @@ spec:
 
       containers:
         - name: copilot-sdk
-          # Dockerfile からビルドしたイメージを指定してください
-          image: "<YOUR_REGISTRY>/copilot-sdk:latest"
-          imagePullPolicy: Always
+          # Dockerfile からビルドしたローカルイメージ
+          image: "copilot-sdk:latest"
+          imagePullPolicy: Never
 
-          command: ["/bin/bash", "-c", "--"]
-          args: ["while true; do sleep 30; done"]
+          command: ["copilot", "--server", "--port", "4321"]
 
           env:
             # copilot-sdk-secret (Secret) から環境変数を注入
@@ -33,6 +32,17 @@ spec:
                 secretKeyRef:
                   name: copilot-sdk-secret
                   key: COPILOT_GITHUB_TOKEN
+            # gh CLI の認証に使用する
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: copilot-sdk-secret
+                  key: COPILOT_GITHUB_TOKEN
+
+          ports:
+            - name: copilot
+              containerPort: 4321
+              protocol: TCP
 
           resources:
             requests:

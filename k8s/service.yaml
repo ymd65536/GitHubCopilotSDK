@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gh-copilot
+  namespace: copilot-sdk
+  labels:
+    app: copilot-sdk
+spec:
+  type: LoadBalancer
+  selector:
+    app: copilot-sdk
+  ports:
+    - name: copilot
+      protocol: TCP
+      port: 4321
+      targetPort: 4321
