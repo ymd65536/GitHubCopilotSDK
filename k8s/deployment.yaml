@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copilot-sdk
+  namespace: copilot-sdk
+  labels:
+    app: copilot-sdk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: copilot-sdk
+  template:
+    metadata:
+      labels:
+        app: copilot-sdk
+    spec:
+      serviceAccountName: copilot-sdk-sa
+
+      containers:
+        - name: copilot-sdk
+          # Dockerfile からビルドしたイメージを指定してください
+          image: "<YOUR_REGISTRY>/copilot-sdk:latest"
+          imagePullPolicy: Always
+
+          command: ["/bin/bash", "-c", "--"]
+          args: ["while true; do sleep 30; done"]
+
+          env:
+            # copilot-sdk-secret (Secret) から環境変数を注入
+            - name: COPILOT_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: copilot-sdk-secret
+                  key: COPILOT_GITHUB_TOKEN
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+
