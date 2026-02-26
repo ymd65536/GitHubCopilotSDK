@@ -15,7 +15,7 @@ k8s/
 ├── deployment.yaml           # Deployment（copilot --server --port 4321）
 ├── service.yaml              # LoadBalancer Service: gh-copilot (port 4321)
 ├── create-secret.sh          # GitHub トークンを Kubernetes Secret に登録
-├── set-url.sh                # Service の EXTERNAL-IP を環境変数にセット
+├── set-url.sh                # port-forward 起動 + COPILOT_CLI_URL を環境変数にセット
 └── interactive_server.py     # Python クライアント（gh-copilot へ接続）
 ```
 
@@ -95,9 +95,6 @@ kubectl get pods -n copilot-sdk
 # サーバーログの確認
 kubectl logs -n copilot-sdk deploy/copilot-sdk
 # → "CLI server listening on port 4321" が出力されれば OK
-
-# Service の EXTERNAL-IP を確認
-kubectl get svc -n copilot-sdk
 ```
 
 ---
@@ -108,8 +105,25 @@ kubectl get svc -n copilot-sdk
 eval "$(bash k8s/set-url.sh)"
 ```
 
-`COPILOT_CLI_URL` がシェルセッション限りの一時的な環境変数としてセットされます。
-シェルを閉じると自動的に破棄されます（ファイルへの書き込みは行いません）。
+`kubectl port-forward` をバックグラウンドで起動し、`COPILOT_CLI_URL=localhost:4321` を
+シェルセッション限りの一時的な環境変数としてセットします。
+シェルを閉じると環境変数は破棄されます。
+
+> **Note:** Rancher Desktop on macOS では LoadBalancer の EXTERNAL-IP にホストから
+> 直接アクセスできないため、`port-forward` 経由で `localhost:4321` を使用します。
+
+**port-forward の停止方法：**
+
+```bash
+# eval で起動した場合（PID が環境変数に残っている）
+kill $COPILOT_PORT_FORWARD_PID
+
+# PID を忘れた場合・別シェルから停止する場合
+pkill -f "kubectl port-forward.*gh-copilot"
+
+# 動作確認
+pgrep -a -f "kubectl port-forward"
+```
 
 ---
 
@@ -120,7 +134,7 @@ python k8s/interactive_server.py
 ```
 
 ```
-Connecting to gh-copilot service at 192.168.x.x:4321 ...
+Connecting to gh-copilot service at localhost:4321 ...
 🌤️  Weather Assistant (type 'exit' to quit)
    Try: 'What's the weather in Paris?' or 'Compare weather in NYC and LA'
 
@@ -142,9 +156,12 @@ You:
 
 ### `set-url.sh`
 
-`kubectl get svc gh-copilot` の EXTERNAL-IP を取得し、
-`export COPILOT_CLI_URL=<IP>:4321` を標準出力に出力します。
+`kubectl port-forward` をバックグラウンドで起動し、
+`export COPILOT_CLI_URL=localhost:4321` を標準出力に出力します。
 `eval` で現在のシェルに読み込みます。
+
+Rancher Desktop on macOS では LoadBalancer の EXTERNAL-IP にホストから直接
+アクセスできないため、この方式を採用しています。
 
 ---
 
@@ -160,9 +177,11 @@ Namespace ごと削除することで、Secret・Deployment・Service・ServiceA
 
 ## トラブルシューティング
 
-| 症状 | 確認コマンド |
+| 症状 | 対処 |
 |---|---|
-| Pod が `InvalidImageName` | `docker images \| grep copilot-sdk` でイメージ確認 |
-| Pod が `CrashLoopBackOff` | `kubectl logs -n copilot-sdk deploy/copilot-sdk` |
-| `EXTERNAL-IP` が `<pending>` | Rancher Desktop の再起動 |
-| 接続タイムアウト | `kubectl get svc -n copilot-sdk` で IP を再確認し `eval "$(bash k8s/set-url.sh)"` を再実行 |
+| Pod が `InvalidImageName` | `docker images \| grep copilot-sdk` でイメージを確認し、`docker build` を再実行 |
+| Pod が `CrashLoopBackOff` | `kubectl logs -n copilot-sdk deploy/copilot-sdk` でログを確認 |
+| `EXTERNAL-IP` が `<pending>` | Rancher Desktop を再起動 |
+| 接続タイムアウト | `eval "$(bash k8s/set-url.sh)"` を再実行して port-forward を再起動 |
+| port-forward が切れた | `pkill -f "kubectl port-forward.*gh-copilot"` で停止後、`eval "$(bash k8s/set-url.sh)"` を再実行 |
+| `COPILOT_PORT_FORWARD_PID` が未定義 | `pgrep -a -f "kubectl port-forward"` で PID を確認し `kill <PID>` で停止 |
