@@ -4,19 +4,20 @@
         "dockerfile": "Dockerfile"
     },
     "features": {
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "version": "latest" },
+        // Codespacesでのビルドエラーを防ぐため、こちらに変更（ローカルでも動きます）
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "version": "latest",
+            "enableNonRootDocker": "true"
+        },
         "ghcr.io/devcontainers/features/github-cli:1": { "version": "latest" },
         "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": { "version": "latest" }
     },
     "mounts": [
-        // ファイルが存在しない場合のビルドエラーを防ぐため、フォルダごとマウントするか
-        // もしくは設定ファイル単体をマウント
         "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube-host,type=bind,consistency=cached"
     ],
     "containerEnv": {
         "KUBECONFIG": "/home/vscode/.kube/config"
     },
-    // host-gateway を追加して host.docker.internal を有効化
     "runArgs": ["--add-host=host.docker.internal:host-gateway"],
     "customizations": {
         "vscode": {
@@ -28,7 +29,6 @@
             ]
         }
     },
-    // 起動時に接続先を動的に修正した config を作成する
-    "postCreateCommand": "mkdir -p ~/.kube && if [ -f /home/vscode/.kube-host/config ]; then sed 's/127.0.0.1/host.docker.internal/g' /home/vscode/.kube-host/config > ~/.kube/config && kubectl config set-cluster $(kubectl config current-context) --insecure-skip-tls-verify=true; fi && pip install --no-cache github-copilot-sdk",,
+    "postCreateCommand": "mkdir -p ~/.kube && if [ -f /home/vscode/.kube-host/config ]; then sed 's/127.0.0.1/host.docker.internal/g' /home/vscode/.kube-host/config > ~/.kube/config && kubectl config set-cluster $(kubectl config current-context) --insecure-skip-tls-verify=true; fi && pip install --no-cache github-copilot-sdk",
     "remoteUser": "vscode"
 }
