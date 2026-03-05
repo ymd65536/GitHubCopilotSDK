@@ -1,7 +1,7 @@
 {
     "name": "GitHubCopilotSDK",
     "build": {
-        "dockerfile": "Dockerfile"
+        "dockerfile": "dockerfile"
     },
     "features": {
         // Codespacesではこれが一番安定します
