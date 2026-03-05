@@ -1,0 +1,4 @@
+FROM mcr.microsoft.com/devcontainers/python:2-3.11-bookworm
+
+# エラーの原因となっている古い Yarn リポジトリ設定を削除
+RUN rm -f /etc/apt/sources.list.d/yarn.list

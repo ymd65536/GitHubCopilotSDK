@@ -78,7 +78,12 @@ bash k8s/create-secret.sh
 ### 5. マニフェストを適用する
 
 ```bash
+kubectl create namespace copilot-sdk
+```
+
+```bash
 kubectl apply --validate=false \
+  -f k8s/namespace.yaml \
   -f k8s/serviceaccount.yaml \
   -f k8s/deployment.yaml \
   -f k8s/service.yaml

@@ -2,7 +2,7 @@ import asyncio
 import os
 import random
 import sys
-from copilot import CopilotClient
+from copilot import CopilotClient, PermissionHandler
 from copilot.tools import define_tool
 from copilot.generated.session_events import SessionEventType
 from pydantic import BaseModel, Field
@@ -34,6 +34,7 @@ async def main():
     session = await client.create_session({
         "streaming": True,
         "tools": [get_weather],
+        "on_permission_request": PermissionHandler.approve_all,
     })
 
     def handle_event(event):
