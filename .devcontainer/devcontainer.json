@@ -4,20 +4,16 @@
         "dockerfile": "Dockerfile"
     },
     "features": {
-        // Codespacesでのビルドエラーを防ぐため、こちらに変更（ローカルでも動きます）
+        // Codespacesではこれが一番安定します
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
-            "version": "latest",
-            "enableNonRootDocker": "true"
+            "version": "latest"
         },
         "ghcr.io/devcontainers/features/github-cli:1": { "version": "latest" },
         "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": { "version": "latest" }
     },
-    "mounts": [
-        "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube-host,type=bind,consistency=cached"
-    ],
-    "containerEnv": {
-        "KUBECONFIG": "/home/vscode/.kube/config"
-    },
+    // 一旦ここを空にするか削除して、Codespaces 自体が立ち上がるか確認
+    "mounts": [], 
+    
     "runArgs": ["--add-host=host.docker.internal:host-gateway"],
     "customizations": {
         "vscode": {
@@ -29,6 +25,6 @@
             ]
         }
     },
-    "postCreateCommand": "mkdir -p ~/.kube && if [ -f /home/vscode/.kube-host/config ]; then sed 's/127.0.0.1/host.docker.internal/g' /home/vscode/.kube-host/config > ~/.kube/config && kubectl config set-cluster $(kubectl config current-context) --insecure-skip-tls-verify=true; fi && pip install --no-cache github-copilot-sdk",
+    "postCreateCommand": "pip install --no-cache github-copilot-sdk",
     "remoteUser": "vscode"
 }
