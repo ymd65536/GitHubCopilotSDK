@@ -1,5 +1,5 @@
-# ベースイメージとして軽量なDebianを使用
-FROM debian:bookworm-slim
+# ベースイメージとして軽量なDebianを使用 (公開ACRミラー)
+FROM mcr.microsoft.com/mirror/docker/library/debian:bookworm-slim
 
 # 必要なパッケージとGitHub CLIのインストールを1つのレイヤーに統合
 RUN apt-get update && apt-get install -y --no-install-recommends \
