@@ -38,6 +38,7 @@ k8s/
 Rancher Desktop を起動し、Kubernetes が有効になっていることを確認します。
 
 ```bash
+# 例: Rancher Desktop を使う場合
 kubectl config use-context rancher-desktop
 kubectl get nodes
 ```
@@ -155,7 +156,7 @@ You:
 | 動作 | 説明 |
 |---|---|
 | `gh auth token` でトークン取得 | `COPILOT_GITHUB_TOKEN` が未設定の場合のみ実行 |
-| `rancher-desktop` コンテキストへ切り替え | 別コンテキストの場合は自動切り替え |
+| `kubectl` コンテキスト解決 | `current-context` を優先。未設定時は `rancher-desktop` または先頭コンテキストへフォールバック |
 | Namespace 作成 | `kubectl apply` で `copilot-sdk` を作成 |
 | Secret 作成 | `--dry-run=client` パイプで冪等に apply |
 
@@ -190,3 +191,50 @@ Namespace ごと削除することで、Secret・Deployment・Service・ServiceA
 | 接続タイムアウト | `eval "$(bash k8s/set-url.sh)"` を再実行して port-forward を再起動 |
 | port-forward が切れた | `pkill -f "kubectl port-forward.*gh-copilot"` で停止後、`eval "$(bash k8s/set-url.sh)"` を再実行 |
 | `COPILOT_PORT_FORWARD_PID` が未定義 | `pgrep -a -f "kubectl port-forward"` で PID を確認し `kill <PID>` で停止 |
+
+---
+
+## `kubectl` コンテキストが 0 件のとき
+
+`kubectl config get-contexts` が空で、`kubectl cluster-info` が `localhost:8080` への接続エラーになる場合は、
+`~/.kube/config` が未作成の可能性があります。
+
+### 確認コマンド
+
+```bash
+kubectl config get-contexts
+ls -la ~/.kube
+```
+
+`~/.kube/config` がない場合は、先にローカルクラスタを起動してコンテキストを作成します。
+
+### 例: `minikube` でコンテキストを作成する
+
+```bash
+minikube start --driver=docker
+kubectl config current-context
+kubectl config get-contexts
+```
+
+期待される状態:
+
+```text
+current-context: minikube
+contexts: minikube が 1 件以上表示される
+```
+
+その後、`create-secret.sh` を再実行します。
+
+```bash
+bash k8s/create-secret.sh
+```
+
+### `create-secret.sh` のコンテキスト選択ルール
+
+`create-secret.sh` は以下の順で使用コンテキストを決定します。
+
+1. `kubectl config current-context`（設定済みならそのまま使用）
+2. `rancher-desktop`（`current-context` 未設定かつ存在する場合）
+3. `kubectl config get-contexts -o name` の先頭
+
+上記のいずれも取得できない場合は、コンテキスト未設定エラーで終了します。

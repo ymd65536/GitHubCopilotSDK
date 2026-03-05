@@ -24,19 +24,27 @@ else
   echo "環境変数 COPILOT_GITHUB_TOKEN が設定済みのため、gh auth token の取得をスキップします。"
 fi
 
-# ローカルクラスターのコンテキストに切り替える（rancher-desktop 前提）
-LOCAL_CONTEXT="rancher-desktop"
+# 現在の kubectl コンテキストを優先し、未設定時のみフォールバックする
+PREFERRED_FALLBACK_CONTEXT="rancher-desktop"
 CURRENT_CONTEXT="$(kubectl config current-context 2>/dev/null || true)"
-echo "現在の kubectl コンテキスト: ${CURRENT_CONTEXT}"
 
-if ! kubectl config get-contexts "${LOCAL_CONTEXT}" &>/dev/null; then
-  echo "Error: コンテキスト '${LOCAL_CONTEXT}' が見つかりません。Rancher Desktop が起動しているか確認してください。" >&2
-  exit 1
-fi
+if [[ -n "${CURRENT_CONTEXT}" ]]; then
+  TARGET_CONTEXT="${CURRENT_CONTEXT}"
+  echo "現在の kubectl コンテキストを使用します: ${TARGET_CONTEXT}"
+else
+  if kubectl config get-contexts "${PREFERRED_FALLBACK_CONTEXT}" &>/dev/null; then
+    TARGET_CONTEXT="${PREFERRED_FALLBACK_CONTEXT}"
+  else
+    TARGET_CONTEXT="$(kubectl config get-contexts -o name 2>/dev/null | head -n 1 || true)"
+  fi
 
-if [[ "${CURRENT_CONTEXT}" != "${LOCAL_CONTEXT}" ]]; then
-  kubectl config use-context "${LOCAL_CONTEXT}"
-  echo "コンテキストを '${LOCAL_CONTEXT}' に切り替えました。"
+  if [[ -z "${TARGET_CONTEXT}" ]]; then
+    echo "Error: kubectl のコンテキストが1つも設定されていません。'kubectl config get-contexts' で確認し、先にコンテキストを作成/設定してください。" >&2
+    exit 1
+  fi
+
+  kubectl config use-context "${TARGET_CONTEXT}" >/dev/null
+  echo "current-context が未設定のため '${TARGET_CONTEXT}' を選択しました。"
 fi
 
 kubectl apply --validate=false -f "$(dirname "$0")/namespace.yaml"
