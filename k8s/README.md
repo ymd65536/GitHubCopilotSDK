@@ -14,8 +14,10 @@ k8s/
 ├── secret-provider-class.yaml# Secret の説明コメント（直接 apply 不要）
 ├── deployment.yaml           # Deployment（copilot --server --port 4321）
 ├── service.yaml              # LoadBalancer Service: gh-copilot (port 4321)
-├── create-secret.sh          # GitHub トークンを Kubernetes Secret に登録
-├── set-url.sh                # port-forward 起動 + COPILOT_CLI_URL を環境変数にセット
+├── create-secret.sh          # GitHub トークンを Kubernetes Secret に登録（Bash版）
+├── create-secret.ps1         # GitHub トークンを Kubernetes Secret に登録（PowerShell版）
+├── set-url.sh                # port-forward 起動 + COPILOT_CLI_URL を環境変数にセット（Bash版）
+├── set-url.ps1               # port-forward 起動 + COPILOT_CLI_URL を環境変数にセット（PowerShell版）
 └── interactive_server.py     # Python クライアント（gh-copilot へ接続）
 ```
 
@@ -68,8 +70,14 @@ docker build -t copilot-sdk:latest -f in_docker/Dockerfile .
 `gh auth token` でトークンを取得し、Kubernetes Secret として登録します。
 トークンはファイルに書かず、シェルセッション内のメモリのみで扱います。
 
+**Bash版：**
 ```bash
 bash k8s/create-secret.sh
+```
+
+**PowerShell版：**
+```powershell
+pwsh k8s/create-secret.ps1
 ```
 
 `COPILOT_GITHUB_TOKEN` 環境変数が設定済みの場合は `gh auth token` の呼び出しをスキップします。
@@ -78,6 +86,7 @@ bash k8s/create-secret.sh
 
 ### 5. マニフェストを適用する
 
+**Bash版：**
 ```bash
 kubectl create namespace copilot-sdk
 ```
@@ -87,6 +96,19 @@ kubectl apply --validate=false \
   -f k8s/namespace.yaml \
   -f k8s/serviceaccount.yaml \
   -f k8s/deployment.yaml \
+  -f k8s/service.yaml
+```
+
+**PowerShell版：**
+```powershell
+kubectl create namespace copilot-sdk
+```
+
+```powershell
+kubectl apply --validate=false `
+  -f k8s/namespace.yaml `
+  -f k8s/serviceaccount.yaml `
+  -f k8s/deployment.yaml `
   -f k8s/service.yaml
 ```
 
@@ -107,19 +129,26 @@ kubectl logs -n copilot-sdk deploy/copilot-sdk
 
 ### 7. 接続先 URL を環境変数にセットする
 
-```bash
-eval "$(bash k8s/set-url.sh)"
-```
-
 `kubectl port-forward` をバックグラウンドで起動し、`COPILOT_CLI_URL=localhost:4321` を
 シェルセッション限りの一時的な環境変数としてセットします。
 シェルを閉じると環境変数は破棄されます。
 
-> **Note:** Rancher Desktop on macOS では LoadBalancer の EXTERNAL-IP にホストから
+> **Note:** Rancher Desktop on macOS/Windows では LoadBalancer の EXTERNAL-IP にホストから
 > 直接アクセスできないため、`port-forward` 経由で `localhost:4321` を使用します。
+
+**Bash版：**
+```bash
+eval "$(bash k8s/set-url.sh)"
+```
+
+**PowerShell版：**
+```powershell
+. k8s/set-url.ps1
+```
 
 **port-forward の停止方法：**
 
+Bash版：
 ```bash
 # eval で起動した場合（PID が環境変数に残っている）
 kill $COPILOT_PORT_FORWARD_PID
@@ -129,6 +158,20 @@ pkill -f "kubectl port-forward.*gh-copilot"
 
 # 動作確認
 pgrep -a -f "kubectl port-forward"
+```
+
+PowerShell版：
+```powershell
+# Job ID が環境変数に残っている場合
+Stop-Job -Id $env:COPILOT_PORT_FORWARD_JOB_ID
+Remove-Job -Id $env:COPILOT_PORT_FORWARD_JOB_ID
+
+# Job ID を忘れた場合・別シェルから停止する場合
+Get-Job | Where-Object { $_.Command -like '*port-forward*' } | Stop-Job
+Get-Job | Where-Object { $_.Command -like '*port-forward*' } | Remove-Job
+
+# 動作確認
+Get-Job
 ```
 
 ---
