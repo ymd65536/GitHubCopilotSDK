@@ -30,6 +30,8 @@ spec:
         env:
         - name: PORT
           value: "8002"
+        - name: COPILOT_MODEL
+          value: "gpt-5-mini"
         - name: COPILOT_GITHUB_TOKEN
           valueFrom:
             secretKeyRef:

@@ -219,6 +219,22 @@ kubectl create secret generic github-token \
   -n a2a-copilot
 ```
 
+### 3.1. Copilotモデルの指定（任意）
+
+Copilot CLI/SDK が使用するモデルは、環境変数 `COPILOT_MODEL` で指定できます。
+
+このA2A構成では、各Deployment（Dispatcher / Weather Agent / Calculator Agent）に以下を設定しています：
+
+```text
+COPILOT_MODEL=gpt-5-mini
+```
+
+別のモデルを使いたい場合は、以下のマニフェストの `env:` を変更して再デプロイしてください。
+
+- `k8s/dispatcher.yaml`
+- `k8s/weather-agent.yaml`
+- `k8s/calculator-agent.yaml`
+
 PowerShell の場合：
 
 ```powershell

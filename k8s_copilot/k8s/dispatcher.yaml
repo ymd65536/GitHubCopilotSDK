@@ -26,6 +26,8 @@ spec:
         env:
         - name: PORT
           value: "8000"
+        - name: COPILOT_MODEL
+          value: "gpt-5-mini"
         - name: AGENT_ENDPOINTS
           value: "http://weather-agent-svc:8001,http://calculator-agent-svc:8002"
         resources:
