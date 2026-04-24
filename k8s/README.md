@@ -73,6 +73,8 @@ gh auth login
 
 ### 3. コンテナイメージをビルドする
 
+> **重要:** Dockerfileが更新され、Python SDK（copilot, pydantic）が含まれるようになりました。
+
 ```bash
 docker build -t copilot-sdk:latest -f in_docker/Dockerfile .
 ```
@@ -196,15 +198,42 @@ Get-Job
 
 ### 8. Python クライアントを実行する
 
-> **注意:** 現在の `interactive_server.py` は更新されたSDKに対応するため、ローカルの `copilot` CLI を直接起動する方式に変更されています。Kubernetes 上のサーバーには接続しません。
+#### 方法1: Kubernetes Pod内で実行する（推奨）
 
-#### 実行方法
+Kubernetes Pod内でスクリプトを実行することで、コンテナ環境の認証情報を使用してcopilotサーバーに直接アクセスできます。
+
+**Bash版：**
+```bash
+bash k8s/run-in-pod.sh
+```
+
+**PowerShell版：**
+```powershell
+.\k8s\run-in-pod.ps1
+```
+
+これにより、スクリプトが自動的にPodにコピーされ、Pod内で実行されます。
+
+**手動で実行する場合：**
+```bash
+# スクリプトをPodにコピー
+kubectl cp k8s/interactive_server.py \
+  copilot-sdk/<pod-name>:/tmp/interactive_server.py
+
+# Pod内で実行
+kubectl exec -it -n copilot-sdk <pod-name> -- \
+  python3 /tmp/interactive_server.py
+```
+
+#### 方法2: ローカルで実行する
+
+ローカルのcopilot CLIを使用して実行します（Kubernetesサーバーには接続しません）。
 
 ```bash
 python k8s/interactive_server.py
 ```
 
-#### 出力例
+#### 出力例（Pod内実行時）
 
 ```
 Starting local copilot client...
@@ -226,6 +255,33 @@ You: exit
 ```
 
 > **動作確認済み:** カスタムツール（`get_weather`）が正常に呼び出され、ストリーミングレスポンスが動作しています。
+
+---
+
+## Kubernetes環境での実行の仕組み
+
+### なぜPod内実行が必要なのか？
+
+GitHub Copilot Python SDKの現在のバージョンでは、`ExternalServerConfig`を使った外部TCP接続に制限があります。そのため、以下のアプローチを採用しています：
+
+1. **Pod内でローカルCLIを起動**: スクリプトをPod内で実行し、Pod内のcopilot CLIを使用
+2. **環境変数による認証**: Pod内の環境変数`COPILOT_GITHUB_TOKEN`を利用して自動認証
+3. **カスタムツールの実行**: Python SDKでツールを定義し、AIが呼び出せるようにする
+
+### イメージの再ビルドが必要な場合
+
+Dockerfileを更新した後は、イメージを再ビルドしてPodを再起動する必要があります：
+
+```bash
+# イメージのリビルド
+docker build -t copilot-sdk:latest -f in_docker/Dockerfile .
+
+# Podを削除（自動的に再作成される）
+kubectl delete pod -n copilot-sdk -l app=copilot-sdk
+
+# 新しいPodの起動を確認
+kubectl get pods -n copilot-sdk -w
+```
 
 #### SDK更新による主な変更点
 
@@ -270,15 +326,49 @@ You: exit
    from copilot.session import PermissionHandler
    ```
 
-#### Kubernetes サーバーに接続する場合
+#### Kubernetes環境での実行
 
-Kubernetes 上の copilot サーバーに接続したい場合は、GitHub Copilot Python SDK の最新仕様に従って `ExternalServerConfig` を使用する必要がありますが、現時点ではローカルプロセス起動を前提とした設計になっているため、直接的なTCP接続は非対応です。
+現在のGitHub Copilot Python SDKでは、外部TCP接続（`ExternalServerConfig`）に制限があります。以下の2つの方法で対応します：
 
-代替案として、ローカルで `copilot` CLI を起動し、それを経由してリクエストを処理する現在の方式を推奨します。
+**推奨方法: Pod内で実行**
+```bash
+# ヘルパースクリプトを使用（自動的にコピー & 実行）
+bash k8s/run-in-pod.sh
+
+# または手動で実行
+kubectl cp k8s/interactive_server.py copilot-sdk/<pod-name>:/tmp/interactive_server.py
+kubectl exec -it -n copilot-sdk <pod-name> -- python3 /tmp/interactive_server.py
+```
+
+**代替方法: ローカルで実行**
+```python
+# ローカルのcopilot CLIを使用（Kubernetesサーバーには接続しない）
+client = CopilotClient()
+```
+
+> **注意**: `ExternalServerConfig(url="localhost:4321")`は現時点では純粋なTCP接続に非対応です。Pod内実行を推奨します。
 
 ---
 
 ## スクリプト詳細
+
+### `run-in-pod.sh` / `run-in-pod.ps1`
+
+Kubernetes Pod内でPythonスクリプトを実行するヘルパースクリプトです。
+
+**機能:**
+- Pod名の自動検出
+- スクリプトの自動コピー
+- インタラクティブモードでの実行
+
+**使用例:**
+```bash
+# Bash版
+bash k8s/run-in-pod.sh
+
+# PowerShell版
+.\k8s\run-in-pod.ps1
+```
 
 ### `create-secret.sh`
 

@@ -8,6 +8,12 @@ from copilot.tools import define_tool
 from copilot.generated.session_events import SessionEventType
 from pydantic import BaseModel, Field
 
+# 実行モード切り替え
+# USE_K8S_SERVER=1 で環境変数を設定するとKubernetesサーバーへの接続を試みます
+# （現在のSDKでは直接TCP接続に制限があるため、Pod内実行を推奨）
+USE_K8S_SERVER = os.environ.get("USE_K8S_SERVER", "0") == "1"
+COPILOT_CLI_URL = os.environ.get("COPILOT_CLI_URL", "localhost:4321")
+
 
 class GetWeatherParams(BaseModel):
     city: str = Field(description="The name of the city to get weather for")
@@ -21,8 +27,16 @@ async def get_weather(params: GetWeatherParams) -> dict:
     return {"city": city, "temperature": f"{temp}°F", "condition": condition}
 
 async def main():
-    print("Starting local copilot client...")
+    if USE_K8S_SERVER:
+        print(f"⚠️  Kubernetes server mode is experimental")
+        print(f"   Attempting to connect to {COPILOT_CLI_URL}...")
+        print(f"   Note: Direct TCP connection may not work with current SDK.")
+        print(f"   Recommended: Run this script inside the Kubernetes Pod using:")
+        print(f"   kubectl exec -it <pod-name> -n copilot-sdk -- python /path/to/script.py\n")
+    else:
+        print("Starting local copilot client...")
 
+    # ローカルCLIを起動（Kubernetes Pod内でも同じ方法を使用）
     client = CopilotClient()
     await client.start()
 

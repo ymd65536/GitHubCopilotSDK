@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     nodejs \
     npm \
+    python3 \
+    python3-pip \
+    python3-venv \
     ca-certificates \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -14,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update \
     && apt-get install -y --no-install-recommends gh \
     && npm install -g @github/copilot \
+    && pip3 install --break-system-packages --no-cache-dir github-copilot-sdk pydantic \
     && npm cache clean --force \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -28,3 +32,4 @@ CMD ["/bin/bash"]
 # コンテナ起動後の使用方法:
 # 1. gh auth login
 # 2. copilot -i "hello world"
+# 3. python3 スクリプトでSDKを使用
