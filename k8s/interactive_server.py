@@ -2,14 +2,10 @@ import asyncio
 import os
 import random
 import sys
-from copilot import CopilotClient, PermissionHandler
+from copilot import CopilotClient
 from copilot.tools import define_tool
 from copilot.generated.session_events import SessionEventType
 from pydantic import BaseModel, Field
-
-# 接続先 URL
-# eval "$(bash k8s/set-url.sh)" で環境変数 COPILOT_CLI_URL をセットしてから実行してください
-COPILOT_CLI_URL = os.environ.get("COPILOT_CLI_URL", "localhost:4321")
 
 
 class GetWeatherParams(BaseModel):
@@ -23,19 +19,21 @@ async def get_weather(params: GetWeatherParams) -> dict:
     condition = random.choice(conditions)
     return {"city": city, "temperature": f"{temp}°F", "condition": condition}
 
-async def main():
-    print(f"Connecting to gh-copilot service at {COPILOT_CLI_URL} ...")
+async def approve_all_permissions(request):
+    """Auto-approve all permission requests"""
+    return {"action": "approve"}
 
-    client = CopilotClient({
-        "cli_url": COPILOT_CLI_URL
-    })
+async def main():
+    print("Starting local copilot client...")
+
+    client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({
-        "streaming": True,
-        "tools": [get_weather],
-        "on_permission_request": PermissionHandler.approve_all,
-    })
+    session = await client.create_session(
+        on_permission_request=approve_all_permissions,
+        streaming=True,
+        tools=[get_weather],
+    )
 
     def handle_event(event):
         if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
@@ -57,7 +55,7 @@ async def main():
             break
 
         sys.stdout.write("Assistant: ")
-        await session.send_and_wait({"prompt": user_input})
+        await session.send_and_wait(user_input)
         print("\n")
 
     await client.stop()
