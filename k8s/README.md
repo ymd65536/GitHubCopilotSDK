@@ -1,11 +1,39 @@
-# GitHub Copilot SDK — Kubernetes ローカル実行ガイド
+# GitHub Copilot SDK — Kubernetes 実行ガイド
 
-> **SDK更新に関する注意事項:**  
-> GitHub Copilot Python SDK が更新され、API仕様が変更されました。現在の `interactive_server.py` は、ローカルの `copilot` CLI を直接起動する方式に対応しており、Kubernetes 上のサーバーへの直接的なTCP接続には対応していません。
+> **✅ 最新の更新（2026年4月）:**  
+> - **Dockerfileを更新**: Python 3.11 + `github-copilot-sdk` + `pydantic` をインストール
+> - **Pod内実行に対応**: Kubernetes Pod内でPython SDKを使用してcopilot CLIに接続可能
+> - **ヘルパースクリプト追加**: `run-in-pod.sh` / `run-in-pod.ps1` でワンコマンド実行
+> - **SDK API変更に対応**: PermissionHandler、キーワード引数、文字列プロンプトに変更
+> - **A2A構成**: 複数のCopilotサーバー間通信については `k8s_copilot/` を参照
 > 
-> 以下のKubernetesセットアップ手順（1〜7）は、コンテナ環境でサーバーを動かす参考情報として残していますが、Python クライアントからの接続方法については今後のSDKアップデートを待つ必要があります。
+> 以下のセットアップ手順（1〜7）は、Kubernetesサーバーモードでの動作を説明していますが、**Python クライアントの実行にはセクション8が最も重要です**。
 
-Rancher Desktop 上で GitHub Copilot サーバーをコンテナとして動かすためのマニフェスト一式です。
+GitHub Copilot を Kubernetes 環境で動かすためのマニフェスト一式です。Rancher Desktop や AKS/GKE などで動作します。
+
+---
+
+## 実行方法の選択
+
+このガイドでは3つの実行方法を提供します：
+
+### 方法1: Pod内でPython SDKを使用（推奨）✨
+Pod内でcopilot CLIとPython SDKを使用してカスタムツールを実行します。
+- ✅ 最もシンプルで推奨される方法
+- ✅ GitHub トークンの環境変数が自動的に利用可能
+- ✅ ヘルパースクリプトでワンコマンド実行
+- 📖 **セクション8を参照**
+
+### 方法2: ローカルでPython SDKを使用
+ローカルマシンでPython SDKを使用してcopilot CLIに接続します。
+- ✅ 開発・デバッグに適している
+- ⚠️ ローカルに `gh auth login` が必要
+- 📖 **セクション8を参照**
+
+### 方法3: Kubernetesサーバーモード
+copilot CLIをサーバーモード（`--server`）で起動します。
+- ℹ️ 参考情報として残していますが、Python SDKとの接続は制限があります
+- 📖 **セクション1〜7を参照**
 
 ---
 
