@@ -1,7 +1,11 @@
 # GitHub Copilot SDK — Kubernetes ローカル実行ガイド
 
-Rancher Desktop 上で GitHub Copilot サーバーをコンテナとして動かし、
-Python クライアント (`interactive_server.py`) から接続するためのマニフェスト一式です。
+> **SDK更新に関する注意事項:**  
+> GitHub Copilot Python SDK が更新され、API仕様が変更されました。現在の `interactive_server.py` は、ローカルの `copilot` CLI を直接起動する方式に対応しており、Kubernetes 上のサーバーへの直接的なTCP接続には対応していません。
+> 
+> 以下のKubernetesセットアップ手順（1〜7）は、コンテナ環境でサーバーを動かす参考情報として残していますが、Python クライアントからの接続方法については今後のSDKアップデートを待つ必要があります。
+
+Rancher Desktop 上で GitHub Copilot サーバーをコンテナとして動かすためのマニフェスト一式です。
 
 ---
 
@@ -25,15 +29,27 @@ k8s/
 
 ## 前提条件
 
+### Kubernetes サーバーをセットアップする場合
+
 | ツール | 用途 |
 |---|---|
 | [Rancher Desktop](https://rancherdesktop.io/) | ローカル Kubernetes + Docker ランタイム |
 | [GitHub CLI (`gh`)](https://cli.github.com/) | トークン取得 |
-| Python 3.10 以上 + `copilot` パッケージ | クライアント実行 |
+
+### Python クライアントを実行する場合（推奨）
+
+| ツール | 用途 |
+|---|---|
+| Python 3.10 以上 | スクリプト実行環境 |
+| `copilot` パッケージ | `pip install copilot` でインストール |
+| GitHub Copilot CLI | `npm install -g @githubnext/github-copilot-cli` または `gh copilot` |
+| GitHub CLI (`gh`) | `gh auth login` で認証済み |
 
 ---
 
 ## セットアップ手順
+
+> **注記:** 以下の手順1〜7は、Kubernetes上でcopilotサーバーをコンテナとして動かすためのものです。現在の `interactive_server.py` はローカルCLIを使用するため、これらの手順をスキップして直接セクション8に進むこともできます。
 
 ### 1. Rancher Desktop を起動する
 
@@ -129,6 +145,8 @@ kubectl logs -n copilot-sdk deploy/copilot-sdk
 
 ### 7. 接続先 URL を環境変数にセットする
 
+> **注意:** この手順は現在の `interactive_server.py` では使用されません（ローカルCLI起動のため）。Kubernetes サーバーに接続する将来のバージョン向けの参考情報として残しています。
+
 `kubectl port-forward` をバックグラウンドで起動し、`COPILOT_CLI_URL=localhost:4321` を
 シェルセッション限りの一時的な環境変数としてセットします。
 シェルを閉じると環境変数は破棄されます。
@@ -178,17 +196,85 @@ Get-Job
 
 ### 8. Python クライアントを実行する
 
+> **注意:** 現在の `interactive_server.py` は更新されたSDKに対応するため、ローカルの `copilot` CLI を直接起動する方式に変更されています。Kubernetes 上のサーバーには接続しません。
+
+#### 実行方法
+
 ```bash
 python k8s/interactive_server.py
 ```
 
+#### 出力例
+
 ```
-Connecting to gh-copilot service at localhost:4321 ...
+Starting local copilot client...
 🌤️  Weather Assistant (type 'exit' to quit)
    Try: 'What's the weather in Paris?' or 'Compare weather in NYC and LA'
 
-You:
+You: What's the weather in Paris?
+Assistant: It's currently **68°F** and **rainy** in Paris 🌧️. Don't forget an umbrella!
+
+You: Compare weather in NYC and LA
+Assistant: | City | Temp | Condition |
+|------|------|-----------|
+| 🗽 New York City | 60°F | Rainy 🌧️ |
+| 🌴 Los Angeles | 63°F | Cloudy ☁️ |
+
+LA is slightly warmer and drier — NYC is rainy while LA is just overcast today.
+
+You: exit
 ```
+
+> **動作確認済み:** カスタムツール（`get_weather`）が正常に呼び出され、ストリーミングレスポンスが動作しています。
+
+#### SDK更新による主な変更点
+
+最新のGitHub Copilot Python SDKでは以下の変更があります：
+
+1. **CopilotClientの初期化**
+   ```python
+   # 旧（動作しない）
+   client = CopilotClient({"cli_url": "localhost:4321"})
+   
+   # 新（ローカルCLIを起動）
+   client = CopilotClient()
+   ```
+
+2. **create_sessionの引数**
+   ```python
+   # 旧（動作しない）
+   session = await client.create_session({
+       "streaming": True,
+       "tools": [get_weather],
+   })
+   
+   # 新（キーワード引数 + 必須パラメータ）
+   session = await client.create_session(
+       on_permission_request=PermissionHandler.approve_all,
+       streaming=True,
+       tools=[get_weather],
+   )
+   ```
+
+3. **send_and_waitの引数**
+   ```python
+   # 旧（動作しない）
+   await session.send_and_wait({"prompt": text})
+   
+   # 新（文字列を直接渡す）
+   await session.send_and_wait(text)
+   ```
+
+4. **PermissionHandlerのインポート**
+   ```python
+   from copilot.session import PermissionHandler
+   ```
+
+#### Kubernetes サーバーに接続する場合
+
+Kubernetes 上の copilot サーバーに接続したい場合は、GitHub Copilot Python SDK の最新仕様に従って `ExternalServerConfig` を使用する必要がありますが、現時点ではローカルプロセス起動を前提とした設計になっているため、直接的なTCP接続は非対応です。
+
+代替案として、ローカルで `copilot` CLI を起動し、それを経由してリクエストを処理する現在の方式を推奨します。
 
 ---
 

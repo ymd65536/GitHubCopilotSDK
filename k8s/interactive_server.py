@@ -3,6 +3,7 @@ import os
 import random
 import sys
 from copilot import CopilotClient
+from copilot.session import PermissionHandler
 from copilot.tools import define_tool
 from copilot.generated.session_events import SessionEventType
 from pydantic import BaseModel, Field
@@ -19,10 +20,6 @@ async def get_weather(params: GetWeatherParams) -> dict:
     condition = random.choice(conditions)
     return {"city": city, "temperature": f"{temp}°F", "condition": condition}
 
-async def approve_all_permissions(request):
-    """Auto-approve all permission requests"""
-    return {"action": "approve"}
-
 async def main():
     print("Starting local copilot client...")
 
@@ -30,7 +27,7 @@ async def main():
     await client.start()
 
     session = await client.create_session(
-        on_permission_request=approve_all_permissions,
+        on_permission_request=PermissionHandler.approve_all,
         streaming=True,
         tools=[get_weather],
     )
