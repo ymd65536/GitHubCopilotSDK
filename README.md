@@ -153,6 +153,104 @@ copilot help config
 copilot --server --port 4321
 ```
 
+## Kubernetesで動かす
+
+KubernetesクラスタでGitHub Copilot SDKを実行できます。詳細は [k8s/README.md](k8s/README.md) を参照してください。
+
+### クイックスタート
+
+1. **イメージのビルド**
+
+```bash
+cd in_docker
+docker build -t copilot-sdk:latest .
+```
+
+2. **GitHubトークンのシークレット作成**
+
+```bash
+kubectl create secret generic github-token \
+  --from-literal=token=YOUR_GITHUB_TOKEN \
+  -n copilot-sdk
+```
+
+3. **デプロイ**
+
+```bash
+cd ../k8s
+kubectl apply -f namespace.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+```
+
+4. **Pod内でスクリプトを実行**
+
+```powershell
+# PowerShell
+.\k8s\run-in-pod.ps1
+```
+
+```bash
+# Bash
+bash k8s/run-in-pod.sh
+```
+
+### Agent-to-Agent (A2A) アーキテクチャ
+
+複数のCopilotエージェントが相互に連携するA2A構成については、[k8s_copilot/README.md](k8s_copilot/README.md) を参照してください。
+
+この構成では、各エージェントが独自のツールセットを持ち、Dispatcherが能力に基づいてリクエストをルーティングします。
+
+## GitHub Copilot SDK v0.2.2 への移行
+
+GitHub Copilot Python SDKは**v0.2.2で大きなAPI変更**がありました。
+
+### 主な変更点
+
+| 項目 | 旧API (v0.1.x) | 新API (v0.2.x) |
+|------|----------------|----------------|
+| **クライアント初期化** | `CopilotClient({"cli_url": "..."})` | `CopilotClient()` (引数なし) |
+| **セッション作成** | `await client.create_session({"streaming": True, ...})` | `await client.create_session(streaming=True, on_permission_request=PermissionHandler.approve_all, ...)` |
+| **メッセージ送信** | `await session.send_and_wait({"content": message})` | `await session.send_and_wait(message)` (文字列を直接渡す) |
+| **PermissionHandler** | `from copilot import PermissionHandler` | `from copilot.session import PermissionHandler` |
+| **必須パラメータ** | なし | `on_permission_request` が必須 |
+| **パッケージ名** | `copilot` (Flask関連パッケージと衝突) | `github-copilot-sdk` (正式パッケージ) |
+
+### 移行例
+
+**旧コード (v0.1.x):**
+```python
+from copilot import CopilotClient, PermissionHandler
+
+client = CopilotClient({"cli_url": "localhost:4321"})
+session = await client.create_session({
+    "streaming": True,
+    "tools": [get_weather]
+})
+await session.send_and_wait({"content": "Hello"})
+```
+
+**新コード (v0.2.x):**
+```python
+from copilot import CopilotClient
+from copilot.session import PermissionHandler  # インポート元変更
+from copilot.tools import define_tool
+
+client = CopilotClient()  # 引数なし
+session = await client.create_session(
+    on_permission_request=PermissionHandler.approve_all,  # 必須
+    streaming=True,
+    tools=[get_weather],
+)
+await session.send_and_wait("Hello")  # 文字列を直接渡す
+```
+
+### 注意点
+
+- **`ExternalServerConfig` は非推奨**: 外部サーバーを指定しても、内部的にローカルCLIが必要なため、Pod内で実行する方が確実です
+- **`on_permission_request` は必須**: ツールを使う場合は必ず指定してください（`PermissionHandler.approve_all` が推奨）
+- **パッケージ名に注意**: PyPIの `copilot` パッケージはFlask関連で別物です。`github-copilot-sdk` を使用してください
+
 ## Copilot CLI Configuration Settings
 
 GitHub Copilot CLIの設定項目を以下にまとめます。
