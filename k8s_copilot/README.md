@@ -439,9 +439,7 @@ kubectl get secret github-token -n a2a-copilot
 
 # トークンを再作成
 kubectl delete secret github-token -n a2a-copilot
-kubectl create secret generic github-token \
-  --from-literal=token=$(gh auth token) \
-  -n a2a-copilot
+kubectl create secret generic github-token --from-literal=token=$(gh auth token) -n a2a-copilot
 
 # Podを再起動
 kubectl rollout restart deployment -n a2a-copilot
