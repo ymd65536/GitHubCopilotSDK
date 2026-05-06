@@ -18,7 +18,9 @@ from dataclasses import dataclass, asdict
 
 import aiohttp
 from fastapi import FastAPI, HTTPException
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from pydantic import BaseModel
+from starlette.responses import Response
 
 # ロギング設定
 logging.basicConfig(level=logging.INFO)
@@ -286,6 +288,14 @@ async def ask_agent(request: AgentRequest):
         endpoint=agent.endpoint,
         response=response_text
     )
+
+
+@app.get("/metrics")
+async def metrics():
+    """
+    Prometheusメトリクスエンドポイント
+    """
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/healthz")

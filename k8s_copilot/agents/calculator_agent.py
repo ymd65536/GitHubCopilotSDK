@@ -16,6 +16,7 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.exporter.prometheus import PrometheusMetricReader
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
@@ -24,7 +25,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from pydantic import BaseModel, Field
+from starlette.responses import Response
 
 from copilot import CopilotClient
 from copilot.session import PermissionHandler
@@ -51,7 +54,8 @@ def setup_telemetry(service_name: str) -> None:
 
     # Metrics (.NET の .WithMetrics(...).AddOtlpExporter() 相当)
     metric_reader = PeriodicExportingMetricReader(OTLPMetricExporter())
-    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+    prometheus_reader = PrometheusMetricReader()
+    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader, prometheus_reader])
     otel_metrics.set_meter_provider(meter_provider)
 
     logger.info(f"[{service_name}] OpenTelemetry configured: {otlp_endpoint}")
@@ -261,6 +265,14 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"[Calculator Agent] Error processing message: {e}")
         return ChatResponse(response=f"Error: {str(e)}")
+
+
+@app.get("/metrics")
+async def metrics():
+    """
+    Prometheusメトリクスエンドポイント
+    """
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/healthz")
