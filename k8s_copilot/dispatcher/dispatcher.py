@@ -11,7 +11,6 @@ A2A Dispatcher for GitHub Copilot Agents
 """
 
 import asyncio
-import json
 import logging
 import os
 from typing import Dict, List, Optional
@@ -19,7 +18,6 @@ from dataclasses import dataclass, asdict
 
 import aiohttp
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 # ロギング設定
@@ -40,6 +38,8 @@ class AgentInfo:
 
 # グローバルエージェントレジストリ
 agent_registry: Dict[str, AgentInfo] = {}
+registry_lock = asyncio.Lock()
+discovery_task: Optional[asyncio.Task] = None
 
 # リクエストモデル
 class AgentRequest(BaseModel):
@@ -107,9 +107,10 @@ async def register_agent(base_url: str):
     )
     
     # 各能力に対してエージェントを登録
-    for cap in capabilities:
-        agent_registry[cap] = agent_info
-        logger.info(f"[Discovery] Registered agent '{name}' with capability '{cap}' at {base_url}")
+    async with registry_lock:
+        for cap in capabilities:
+            agent_registry[cap] = agent_info
+            logger.info(f"[Discovery] Registered agent '{name}' with capability '{cap}' at {base_url}")
 
 
 async def discover_kubernetes_agents():
@@ -139,6 +140,20 @@ async def load_static_agents():
         endpoint = endpoint.strip()
         if endpoint:
             await register_agent(endpoint)
+
+
+async def discovery_loop():
+    """
+    定期的に静的エージェントを再検出
+
+    Dispatcher起動時にエージェントが未起動でも、後から登録できるようにする。
+    """
+    interval_seconds = int(os.getenv("DISCOVERY_INTERVAL_SECONDS", "15"))
+    logger.info(f"[Discovery] Background discovery started (interval={interval_seconds}s)")
+
+    while True:
+        await load_static_agents()
+        await asyncio.sleep(interval_seconds)
 
 
 async def send_to_agent(agent_endpoint: str, message: str) -> str:
@@ -171,13 +186,32 @@ async def startup_event():
     """
     logger.info("[Dispatcher] Starting up...")
     
-    # 静的エージェントを読み込み
+    global discovery_task
+
+    # 起動時に一度静的エージェントを読み込み
     await load_static_agents()
+
+    # エージェント起動順に依存しないよう、定期再検出を開始
+    discovery_task = asyncio.create_task(discovery_loop())
     
     # Kubernetes検出（将来の実装）
     # await discover_kubernetes_agents()
     
     logger.info(f"[Dispatcher] Registered {len(agent_registry)} agent capabilities")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    シャットダウン時のクリーンアップ
+    """
+    global discovery_task
+    if discovery_task:
+        discovery_task.cancel()
+        try:
+            await discovery_task
+        except asyncio.CancelledError:
+            pass
 
 
 @app.get("/")
@@ -225,10 +259,14 @@ async def ask_agent(request: AgentRequest):
     # 能力を持つエージェントを検索
     if capability not in agent_registry:
         # 登録済みエージェントの情報を含めてエラーを返す
-        available = [
-            {"name": agent.name, "capabilities": agent.capabilities}
-            for agent in set(agent_registry.values())
-        ]
+        agents_by_endpoint = {}
+        for agent in agent_registry.values():
+            if agent.endpoint not in agents_by_endpoint:
+                agents_by_endpoint[agent.endpoint] = {
+                    "name": agent.name,
+                    "capabilities": agent.capabilities,
+                }
+        available = list(agents_by_endpoint.values())
         raise HTTPException(
             status_code=404,
             detail={
