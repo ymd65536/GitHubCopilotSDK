@@ -10,6 +10,17 @@ import logging
 import os
 from typing import Optional
 
+from opentelemetry import metrics as otel_metrics
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -22,8 +33,33 @@ from copilot.tools import define_tool
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def setup_telemetry(service_name: str) -> None:
+    """OTEL_EXPORTER_OTLP_ENDPOINT が設定されている場合、Aspire Dashboard へトレースとメトリクスを送信する。"""
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    if not otlp_endpoint:
+        logger.info(f"[{service_name}] OTEL_EXPORTER_OTLP_ENDPOINT not set, skipping telemetry setup")
+        return
+
+    resource = Resource(attributes={"service.name": service_name})
+
+    # Traces (.NET の .WithTracing(...).AddOtlpExporter() 相当)
+    tracer_provider = TracerProvider(resource=resource)
+    tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+    trace.set_tracer_provider(tracer_provider)
+
+    # Metrics (.NET の .WithMetrics(...).AddOtlpExporter() 相当)
+    metric_reader = PeriodicExportingMetricReader(OTLPMetricExporter())
+    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+    otel_metrics.set_meter_provider(meter_provider)
+
+    logger.info(f"[{service_name}] OpenTelemetry configured: {otlp_endpoint}")
+
+
 # FastAPIアプリケーション
 app = FastAPI(title="Weather Agent")
+setup_telemetry("Weather Agent")
+FastAPIInstrumentor.instrument_app(app)
 
 # グローバルCopilotセッション
 copilot_session = None

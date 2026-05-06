@@ -30,6 +30,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: aspire-dashboard-svc
+  namespace: a2a-copilot
 spec:
   type: NodePort
   selector:
