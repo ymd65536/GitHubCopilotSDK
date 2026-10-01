@@ -15,14 +15,42 @@
 
 おまけですが、GitHub CLIも入れておくと便利です。
 
+## Copilot CLIとPython
+
+Python SDKではインストール後に一度だけダウンロードする手順が推奨されています。
+参考：[Default setup (bundled CLI)](https://github.com/github/copilot-sdk/blob/main/docs/setup/bundled-cli.md)
+
+以下のコマンドでPython SDKのランタイムをダウンロードします。
+
+```bash
+python -m copilot download-runtime
+```
+
 ## Getting Started
 
 [getting-started.md](https://github.com/github/copilot-sdk/blob/main/docs/getting-started.md)を参考に進めてみよう。
 
 ```bash
 copilot --version
-# 0.0.395
-# Commit: 4b4fe6e
+```
+
+実行結果
+
+```bash
+# GitHub Copilot CLI 1.0.91.
+# Run 'copilot update' to check for updates.
+```
+
+Pythonサンプルの依存関係はuvで管理します。Python 3.11以上とuvを用意し、リポジトリのルートで以下を実行してください。
+
+```bash
+uv sync --project python
+```
+
+ディレクトリを変更します。
+
+```bash
+cd python
 ```
 
 ## 最初のメッセージ送信
@@ -30,7 +58,7 @@ copilot --version
 まずはメッセージを送信してみます。
 
 ```python
-python python/your_first_message.py
+uv run --project python python python/your_first_message.py
 ```
 
 実行結果
@@ -48,7 +76,7 @@ python python/your_first_message.py
 ストリーミングでメッセージを送信するには以下のようにします。
 
 ```python
-python python/streaming_response.py
+uv run --project python python python/streaming_response.py
 ```
 
 これでメッセージが少しずつ流れてくるようになります。
@@ -58,7 +86,7 @@ python python/streaming_response.py
 次はツールを使ってみます。ツール呼び出しを使うと、外部のAPIやデータベースにアクセスして情報を取得したり、操作を実行したりできます。
 
 ```python
-python python/custom_tool.py
+uv run --project python python python/custom_tool.py
 ```
 
 実行結果
@@ -72,7 +100,7 @@ python python/custom_tool.py
 次は諦めずにCopilotとの対話を続けてみます。
 
 ```python
-python python/interactive.py
+uv run --project python python python/interactive.py
 ```
 
 実行すると、対話モードに入って、Copilotと連続してメッセージをやり取りできます。
@@ -91,7 +119,7 @@ copilot --server --port 4321
 別のターミナルでクライアントを起動します。
 
 ```python
-python python/server_mode.py
+uv run --project python python python/server_mode.py
 ```
 
 ポイントは`cli_url`を指定することです。
@@ -117,7 +145,7 @@ copilot --server --port 4321
 別のターミナルでクライアントを起動します。
 
 ```python
-python python/interactive_server.py
+uv run --project python python python/interactive_server.py
 ```
 
 これでサーバーモードで対話が始まります。（対話の始まり！！！）
