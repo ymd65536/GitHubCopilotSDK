@@ -11,8 +11,12 @@ async def main():
         model="gpt-5.4",
         streaming=True,
     )
-    response = await session.send_and_wait(prompt="2 + 2はいくつだ？")
-    print(response.data.content)
+    question = "2 + 2はいくつだ？"
+    response = await session.send_and_wait(prompt=question)
+    answer = f"2 + 2 = {response.data.content}"
+
+    print(question)
+    print(answer)
 
     await client.stop()
 
