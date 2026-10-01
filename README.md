@@ -347,3 +347,5 @@ TypeError: unsupported operand type(s) for |: '_TypedDictMeta' and 'types.Generi
 - [cookbook](https://github.com/github/copilot-sdk/blob/main/cookbook/python/README.md)
 - [GitHub Copilot CLI について](https://docs.github.com/ja/copilot/concepts/agents/about-copilot-cli)
 - [GitHub Copilot SDKの発表](https://github.blog/jp/2026-01-23-build-an-agent-into-any-app-with-the-github-copilot-sdk/)
+- [Copilot SDK is now generally available](https://github.blog/changelog/2026-06-02-copilot-sdk-is-now-generally-available/)
+- [Migrating the GitHub Copilot runtime to Rust, using Copilot](https://github.blog/ai-and-ml/generative-ai/migrating-the-github-copilot-runtime-to-rust-using-copilot/)
