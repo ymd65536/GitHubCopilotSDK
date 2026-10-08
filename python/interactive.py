@@ -7,8 +7,10 @@ from copilot.tools import define_tool
 from copilot.generated.session_events import SessionEventType
 from pydantic import BaseModel, Field
 
+
 class GetWeatherParams(BaseModel):
     city: str = Field(description="The name of the city to get weather for")
+
 
 @define_tool(description="Get the current weather for a city")
 async def get_weather(params: GetWeatherParams) -> dict:
@@ -18,15 +20,16 @@ async def get_weather(params: GetWeatherParams) -> dict:
     condition = random.choice(conditions)
     return {"city": city, "temperature": f"{temp}°F", "condition": condition}
 
+
 async def main():
     client = CopilotClient()
     await client.start()
 
     session = await client.create_session(
         on_permission_request=PermissionHandler.approve_all,
-        model = "gpt-5.4",
-        streaming = True,
-        tools = [get_weather],
+        model="gpt-5.4",
+        streaming=True,
+        tools=[get_weather],
     )
 
     def handle_event(event):
@@ -49,7 +52,7 @@ async def main():
             break
 
         sys.stdout.write("Assistant: ")
-        await session.send_and_wait(prompt = user_input)
+        await session.send_and_wait(prompt=user_input)
         print("\n")
 
     await client.stop()
