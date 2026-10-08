@@ -25,6 +25,6 @@
             ]
         }
     },
-    "postCreateCommand": "pip install --no-cache github-copilot-sdk",
+    "postCreateCommand": "pip install --no-cache uv github-copilot-sdk",
     "remoteUser": "vscode"
 }

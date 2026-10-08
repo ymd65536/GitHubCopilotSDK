@@ -1,17 +1,18 @@
 import asyncio
 import sys
 from copilot import CopilotClient
+from copilot.session import PermissionHandler
 from copilot.generated.session_events import SessionEventType
 
 async def main():
     client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({
-        "model": "gpt-4.1",
-        "streaming": True,
-    })
-
+    session = await client.create_session(
+        on_permission_request=PermissionHandler.approve_all,
+        model="gpt-5.4",
+        streaming=True,
+    )
     # Listen for response chunks
     def handle_event(event):
         if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
@@ -21,9 +22,8 @@ async def main():
             print()  # New line when done
 
     session.on(handle_event)
-
-    await session.send_and_wait({"prompt": "Tell me a short joke"})
-
+    prompt = "Tell me a short joke" 
+    await session.send_and_wait(prompt=prompt)
     await client.stop()
 
 asyncio.run(main())
