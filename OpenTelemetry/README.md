@@ -34,7 +34,13 @@
 
 ## インフラ構成図
 
-Aspire AppHostが起動するコンテナー群と、Copilot CLI/SDKからのテレメトリの流れは以下の通りです。
+構成を箇条書きで示すと以下の通りです。
+
+- Copilot CLI/SDK がOTLP/HTTPで OpenTelemetry Collector にトレース・ログ・メトリクスを送信します。
+- Collector は受信したシグナルを Aspire Dashboard に転送しつつ、トレースは Tempo、ログは Loki へ、メトリクスはPrometheus exporter（`otel-collector:9464`）経由で Prometheus へ転送します。
+- Grafana はTempo・Loki・Prometheusをデータソースとして登録しており、Explore画面から3シグナルを横断的に参照できます。
+
+Aspire AppHostが起動するコンテナー群とCopilot CLI/SDKからのテレメトリの流れを構成図として示すと以下の通りです。
 
 ```mermaid
 flowchart LR
@@ -65,19 +71,21 @@ flowchart LR
     Loki -. "データソース" .-> Grafana
 ```
 
-- Copilot CLI/SDK がOTLP/HTTPで OpenTelemetry Collector にトレース・ログ・メトリクスを送信します。
-- Collector は受信したシグナルを Aspire Dashboard に転送しつつ、トレースは Tempo、ログは Loki へ、メトリクスはPrometheus exporter（`otel-collector:9464`）経由で Prometheus へ転送します。
-- Grafana はTempo・Loki・Prometheusをデータソースとして登録しており、Explore画面から3シグナルを横断的に参照できます。
+GrafanaはTempo、Loki、Prometheusをデータソースとして使用するため、3シグナルをAspireとGrafanaの両方で参照できます。設定ファイルはAppHostの出力先にコピーしてコンテナーへ読み取り専用でマウントするため、起動時の作業ディレクトリに依存しません。
 
-## Aspire
+`GF_SECURITY_ADMIN_PASSWORD`はローカル検証用の値です。共有環境では秘密情報に置き換えてください。また、匿名アクセスを有効にしているAspire Dashboardは開発用ネットワークだけで使用してください。
 
-`AspireHost/`に .NET Aspire AppHostを追加しています。.NET 10 SDKと、起動済みのDockerが必要です。リポジトリのルートから実行する場合:
+## .NET10ですぐに可視化環境を構築する
+
+`AspireHost/`に .NET Aspire AppHostを追加しています。.NET 10 SDKと起動済みのDockerが必要です。
+
+リポジトリのルートから実行する場合は以下のコマンドでAspireのAppHostを起動します。
 
 ```bash
 dotnet run --project OpenTelemetry/AspireHost
 ```
 
-すでに`OpenTelemetry/AspireHost`ディレクトリにいる場合は、次のように実行します。
+なお、すでに`OpenTelemetry/AspireHost`ディレクトリがカレントディレクトリに設定されている場合は以下のコマンドでAspireのAppHostを起動します。
 
 ```bash
 dotnet run
@@ -85,46 +93,71 @@ dotnet run
 
 Aspire Dashboard、OpenTelemetry Collector、Prometheus、Grafana、Tempo、Lokiをコンテナーとして起動します。Copilot CLI/SDKから送るOTLPはCollectorが受信し、トレースをAspire DashboardとTempo、ログをAspire DashboardとLoki、メトリクスをAspire DashboardとPrometheusへ転送します。
 
-GrafanaはTempo、Loki、Prometheusをデータソースとして使用するため、3シグナルをAspireとGrafanaの両方で参照できます。設定ファイルはAppHostの出力先にコピーしてコンテナーへ読み取り専用でマウントするため、起動時の作業ディレクトリに依存しません。
+## Copilot CLIの設定
 
-`GF_SECURITY_ADMIN_PASSWORD`はローカル検証用の値です。共有環境では秘密情報に置き換えてください。また、匿名アクセスを有効にしているAspire Dashboardは開発用ネットワークだけで使用してください。
+Python SDKを初めて使用する場合は、SDKの実行に必要なCopilot CLIランタイムを一度ダウンロードする必要があります。ダウンロードを行うには
+別のターミナルを起動して以下のコマンドを実行してください。
+
+```bash
+python -m copilot download-runtime
+```
+
+実行結果
+
+```text
+Downloading Copilot runtime v1.0.95...
+Runtime cached at: /home/vscode/.cache/github-copilot-sdk/cli/1.0.95/prebuilds/linux-x64/copilot-runtime
+```
+
+## Copilot CLIの起動と接続
+
+では、実際にCopilot CLIとAspire AppHostを接続してテレメトリを送信し、可視化環境を確認してみましょう。
+Copilot CLIからCollectorへ送信する場合は、CLIを起動する前に次を設定します。
+
+`OTEL_EXPORTER_OTLP_ENDPOINT`はAspire AppHost内のDashboardではなく、OTLP/HTTPを受け付けるCollectorのURLです。SDKでは`TelemetryConfig`のOTLP endpointに同じ`http://localhost:4318`を指定します。
+
+```bash
+export COPILOT_OTEL_ENABLED=true
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Copilot CLIを起動します。
+
+```bash
+copilot
+```
+
+これでCopilot CLIからCollectorへテレメトリを送信する準備が整いました。
+
+### 実験的な機能を有効にする
+
+実験的な機能を有効にするにはCopilot CLIのスラッシュコマンドで`/experimental on`を実行します。
+
+Aspire Dashboardは<http://localhost:18880>で開くことができ、Aspire Dashboardでは各シグナルの画面、GrafanaではExploreを開いて対応するデータソースを選択します。
+
+可視化ツールがAspire Dashboard、Grafana、Prometheus、Tempo、Lokiで構成されていますので順番に見ていきましょう。
+
+## Aspire Dashboard
+
+まずはAspire Dashboardを確認します。Aspire Dashboardは<http://localhost:18880>で開くことができ、トレース、ログ、メトリクスの3シグナルを一元的に可視化できます。Aspire DashboardのUIは、トレース、ログ、メトリクスの各画面にアクセスできるタブで構成されており、各シグナルの詳細を確認できます。
 
 ## Prometheus
+
+次にPrometheusです。Prometheusは<http://localhost:9090>は開きます。
 
 CollectorはPrometheus exporterを`otel-collector:9464`で公開し、Prometheusが15秒ごとにメトリクスをscrapeします。scrapeの設定は[`prometheus.yml`](./prometheus.yml)、Collectorのexporter設定は[`otel-collector.yaml`](./otel-collector.yaml)を参照してください。
 
 PrometheusのUI: <http://localhost:9090>。`up{job="otel-collector"}`を実行すると、Collectorのexporterがscrapeできているか確認できます。Copilot CLI/SDKのメトリクスを表示するには、下記の「起動と接続」にあるTelemetry設定を行ってください。
 
-## Grafana、Tempo、Loki
+## Grafana、Tempo、Lokiを確認する
+
+最後にGrafanaです。Grafanaは<http://localhost:3000>で開きます。Grafanaのユーザー名は`admin`、初期パスワードは`change-me`です。
 
 Grafanaは起動時にPrometheus、Tempo、Lokiをデータソースとして登録します。設定は[`grafana-datasources.yaml`](./grafana-datasources.yaml)を参照してください。
 
 Grafana: <http://localhost:3000>（ユーザー名`admin`、パスワードはAppHostの`GF_SECURITY_ADMIN_PASSWORD`）
 
 GrafanaのExploreで、メトリクスはPrometheus、トレースはTempo、ログはLokiを選択します。TempoとLokiのローカルストレージはコンテナー内にあり、スタックを削除するとデータも削除されます。
-
-## 起動と接続
-
-1. 上記いずれかの`dotnet run`コマンドでスタックを起動します。
-2. Copilot CLIからCollectorへ送信する場合は、CLIを起動する前に次を設定します。
-
-   ```bash
-   export COPILOT_OTEL_ENABLED=true
-   export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-   copilot
-   ```
-
-   `OTEL_EXPORTER_OTLP_ENDPOINT`はAspire AppHost内のDashboardではなく、OTLP/HTTPを受け付けるCollectorのURLです。SDKでは`TelemetryConfig`のOTLP endpointに同じ`http://localhost:4318`を指定します。
-3. Aspire Dashboardは<http://localhost:18880>、Prometheusは<http://localhost:9090>、Grafanaは<http://localhost:3000>で開きます。Grafanaのユーザー名は`admin`、初期パスワードは`change-me`です。
-4. Aspire Dashboardでは各シグナルの画面、GrafanaではExploreを開いて対応するデータソースを選択します。
-
-### Python SDKを使用する場合
-
-Copilot CLIのTelemetryを送信するだけなら、以下のランタイムダウンロードは不要です。Python SDKを初めて使用する場合は、SDKの実行に必要なCopilot CLIランタイムを一度ダウンロードします。
-
-```bash
-python -m copilot download-runtime
-```
 
 ## 参考
 
