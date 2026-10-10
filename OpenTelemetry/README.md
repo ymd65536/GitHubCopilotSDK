@@ -4,6 +4,19 @@
 
 GitHub Copilot CLIとOpenTelemetryを組み合わせて、アプリケーションの可観測性を向上させる方法について説明します。
 
+## Observability Tools
+
+- [OpenTelemetry](https://opentelemetry.io/)
+- [Aspire](https://aspire.dev/)
+- [Prometheus](https://prometheus.io/)
+- [Grafana](https://grafana.com/)
+
+## Aspire
+
+## Prometheus
+
+## Grafana
+
 ## 参考
 
 - [opentelemetry-monitoring](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring)
