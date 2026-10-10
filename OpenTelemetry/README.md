@@ -150,9 +150,22 @@ copilot
 
 実験的な機能を有効にするにはCopilot CLIのスラッシュコマンドで`/experimental on`を実行します。
 
-Aspire Dashboardは<http://localhost:18880>で開くことができ、Aspire Dashboardでは各シグナルの画面、GrafanaではExploreを開いて対応するデータソースを選択します。
+```bash
+/experimental on
+```
 
-可視化ツールがAspire Dashboard、Grafana、Prometheus、Tempo、Lokiで構成されていますので順番に見ていきましょう。
+`/moel`でモデルを切り替え、HydraFusionをモデルとして選択します。
+
+## HydraFusionを使ってみる
+
+では、Copilot CLIでHydraFusionモデルを使ってみましょう。
+プロンプトはCopilot CLIで入力します。試しに以下のように入力してみましょう。
+
+```text
+Hello, HydraFusion!
+```
+
+結果が返ってきたら、Aspire Dashboard、Grafana、Prometheus、Tempo、LokiにMetricsが配信されていますので順番に見ていきましょう。
 
 ## Aspire DashboardでCopilot CLIの動きを観測する
 
