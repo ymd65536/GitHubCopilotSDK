@@ -10,5 +10,7 @@
     <Content Include="../otel-collector.yaml" Link="otel-collector.yaml" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../prometheus.yml" Link="prometheus.yml" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../grafana-datasources.yaml" Link="grafana-datasources.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../tempo.yaml" Link="tempo.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../loki.yaml" Link="loki.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

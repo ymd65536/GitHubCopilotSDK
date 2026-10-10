@@ -10,6 +10,8 @@ GitHub Copilot CLIとOpenTelemetryを組み合わせて、アプリケーショ�
 - [Aspire](https://aspire.dev/)
 - [Prometheus](https://prometheus.io/)
 - [Grafana](https://grafana.com/)
+- [Tempo](https://grafana.com/oss/tempo/)
+- [Loki](https://grafana.com/oss/loki/)
 
 ## Aspire
 
@@ -25,7 +27,7 @@ dotnet run --project OpenTelemetry/AspireHost
 dotnet run
 ```
 
-Aspire Dashboard、OpenTelemetry Collector、Prometheus、Grafana をコンテナーとして起動します。Copilot CLI/SDK から送る OTLP は Collector が受信し、トレースとログを Aspire Dashboard へ、メトリクスを Aspire Dashboard と Prometheus へ転送します。設定ファイルは AppHost の出力先にコピーしてコンテナーへ読み取り専用でマウントするため、起動時の作業ディレクトリに依存しません。
+Aspire Dashboard、OpenTelemetry Collector、Prometheus、Grafana、Tempo、Loki をコンテナーとして起動します。Copilot CLI/SDK から送る OTLP は Collector が受信し、トレースを Aspire Dashboard と Tempo、ログを Aspire Dashboard と Loki、メトリクスを Aspire Dashboard と Prometheus へ転送します。Grafana は Tempo、Loki、Prometheus をデータソースとして使用するため、3シグナルを Aspire と Grafana の両方で参照できます。設定ファイルは AppHost の出力先にコピーしてコンテナーへ読み取り専用でマウントするため、起動時の作業ディレクトリに依存しません。
 
 `GF_SECURITY_ADMIN_PASSWORD` はローカル検証用の値です。共有環境では秘密情報に置き換えてください。また、匿名アクセスを有効にしている Aspire Dashboard は開発用ネットワークだけで使用してください。
 
@@ -35,11 +37,13 @@ Collector は Prometheus exporter を `otel-collector:9464` で公開し、Prome
 
 Prometheus の UI: <http://localhost:9090>。`up{job="otel-collector"}` を実行すると、Collector の exporter が scrape できているか確認できます。Copilot CLI/SDK のメトリクスを表示するには、下記の「起動と接続」にあるTelemetry設定を行ってください。
 
-## Grafana
+## Grafana、Tempo、Loki
 
-Grafana は起動時に Prometheus をデータソースとして登録します。設定は [`grafana-datasources.yaml`](./grafana-datasources.yaml) を参照してください。
+Grafana は起動時に Prometheus、Tempo、Loki をデータソースとして登録します。設定は [`grafana-datasources.yaml`](./grafana-datasources.yaml) を参照してください。
 
 Grafana: <http://localhost:3000>（ユーザー名 `admin`、パスワードは AppHost の `GF_SECURITY_ADMIN_PASSWORD`）
+
+Grafana の Explore で、メトリクスは Prometheus、トレースは Tempo、ログは Loki を選択します。Tempo と Loki のローカルストレージはコンテナー内にあり、スタックを削除するとデータも削除されます。
 
 ## 起動と接続
 
@@ -54,8 +58,7 @@ Grafana: <http://localhost:3000>（ユーザー名 `admin`、パスワードは 
 
    `OTEL_EXPORTER_OTLP_ENDPOINT` はAspire AppHost内のDashboardではなく、OTLP/HTTPを受け付けるCollectorのURLです。SDKでは `TelemetryConfig` の OTLP endpoint に同じ `http://localhost:4318` を指定します。
 3. Aspire Dashboard は <http://localhost:18880>、Prometheus は <http://localhost:9090>、Grafana は <http://localhost:3000> で開きます。Grafana のユーザー名は `admin`、初期パスワードは `change-me` です。
-
-Prometheus が扱うのはメトリクスです。トレースやログは Aspire Dashboard で確認します。Grafana のトレース・ログ表示も必要な場合は、Tempo や Loki など対応するバックエンドを別途追加してください。
+4. Aspire Dashboard では各シグナルの画面、Grafana では Explore を開いて対応するデータソースを選択します。
 
 ### Python SDKを使用する場合
 

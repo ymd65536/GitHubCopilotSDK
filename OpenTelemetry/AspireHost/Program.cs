@@ -24,6 +24,20 @@ builder.AddContainer("otel-collector", "otel/opentelemetry-collector-contrib")
     .WithArgs("--config=/etc/otelcol-contrib/config.yaml")
     .WithHttpEndpoint(port: 4318, targetPort: 4318, name: "otlp-http");
 
+builder.AddContainer("tempo", "grafana/tempo")
+    .WithBindMount(
+        Path.Combine(configDirectory, "tempo.yaml"),
+        "/etc/tempo.yaml",
+        isReadOnly: true)
+    .WithArgs("-config.file=/etc/tempo.yaml");
+
+builder.AddContainer("loki", "grafana/loki")
+    .WithBindMount(
+        Path.Combine(configDirectory, "loki.yaml"),
+        "/etc/loki/local-config.yaml",
+        isReadOnly: true)
+    .WithArgs("-config.file=/etc/loki/local-config.yaml");
+
 builder.AddContainer("prometheus", "prom/prometheus")
     .WithBindMount(
         Path.Combine(configDirectory, "prometheus.yml"),
