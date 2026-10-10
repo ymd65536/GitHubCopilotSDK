@@ -91,6 +91,23 @@ dotnet run --project OpenTelemetry/AspireHost
 dotnet run
 ```
 
+実行結果
+
+```text
+AppHost:  AspireHost.csproj
+Dashboard:  https://localhost:43863/login?t=3c1f62e125335ae38074f7a01d8e2ff0
+Logs:  /home/vscode/.aspire/logs/cli_20261010T125202_3c4641e6.log 
+
+Endpoints:  otel-dashboard has endpoint http://localhost:18880   
+            otel-dashboard has endpoint http://localhost:18889   
+            grafana has endpoint http://localhost:3000           
+            otel-collector has endpoint http://localhost:4318    
+            prometheus has endpoint http://localhost:9090        
+            Press CTRL+C to stop the AppHost and exit.   
+```
+
+※このときに表示されるエンドポイント情報はダッシュボードのアクセス先になるため、ブラウザでアクセスする際の参考にしてください。
+
 Aspire Dashboard、OpenTelemetry Collector、Prometheus、Grafana、Tempo、Lokiをコンテナーとして起動します。Copilot CLI/SDKから送るOTLPはCollectorが受信し、トレースをAspire DashboardとTempo、ログをAspire DashboardとLoki、メトリクスをAspire DashboardとPrometheusへ転送します。
 
 ## Copilot CLIの設定
