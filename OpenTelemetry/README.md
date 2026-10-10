@@ -78,3 +78,5 @@ python -m copilot download-runtime
 - [Managed telemetry.headers prevents OpenTelemetry (OTEL) export](https://github.com/github/copilot-cli/issues/4669)
 - [Feature Request: Enterprise OTel auth — mTLS env vars + dynamic-headers helper (parity with Claude Code)](https://github.com/github/copilot-cli/issues/3477)
 - [Dynamic workflows in Copilot CLI and the Copilot app](https://github.blog/changelog/2026-10-01-dynamic-workflows-in-copilot-cli-and-the-copilot-app/)
+
+- [hydrafusion-traces](https://github.com/samueltauil/hydrafusion-traces/blob/main/docs/SPIKE.md)
