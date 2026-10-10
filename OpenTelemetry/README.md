@@ -31,9 +31,9 @@ Aspire Dashboard、OpenTelemetry Collector、Prometheus、Grafana をコンテ�
 
 ## Prometheus
 
-Prometheus は Collector の Prometheus exporter を 15 秒ごとに scrape します。設定は [`prometheus.yml`](./prometheus.yml) を参照してください。
+Collector は Prometheus exporter を `otel-collector:9464` で公開し、Prometheus が 15 秒ごとにメトリクスを scrape します。scrape の設定は [`prometheus.yml`](./prometheus.yml)、Collector の exporter 設定は [`otel-collector.yaml`](./otel-collector.yaml) を参照してください。
 
-Prometheus の UI: <http://localhost:9090>
+Prometheus の UI: <http://localhost:9090>。`up{job="otel-collector"}` を実行すると、Collector の exporter が scrape できているか確認できます。Copilot CLI/SDK のメトリクスを表示するには、下記の「起動と接続」にあるTelemetry設定を行ってください。
 
 ## Grafana
 
@@ -56,6 +56,14 @@ Grafana: <http://localhost:3000>（ユーザー名 `admin`、パスワードは 
 3. Aspire Dashboard は <http://localhost:18880>、Prometheus は <http://localhost:9090>、Grafana は <http://localhost:3000> で開きます。Grafana のユーザー名は `admin`、初期パスワードは `change-me` です。
 
 Prometheus が扱うのはメトリクスです。トレースやログは Aspire Dashboard で確認します。Grafana のトレース・ログ表示も必要な場合は、Tempo や Loki など対応するバックエンドを別途追加してください。
+
+### Python SDKを使用する場合
+
+Copilot CLIのTelemetryを送信するだけなら、以下のランタイムダウンロードは不要です。Python SDKを初めて使用する場合は、SDKの実行に必要なCopilot CLIランタイムを一度ダウンロードします。
+
+```bash
+python -m copilot download-runtime
+```
 
 ## 参考
 
