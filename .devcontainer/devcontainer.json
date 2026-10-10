@@ -8,6 +8,9 @@
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
             "version": "latest"
         },
+        "ghcr.io/devcontainers/features/dotnet:2": {
+            "version": "10.0"
+        },
         "ghcr.io/devcontainers/features/github-cli:1": { "version": "latest" },
         "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": { "version": "latest" }
     },
@@ -15,6 +18,12 @@
     "mounts": [], 
     
     "runArgs": ["--add-host=host.docker.internal:host-gateway"],
+    "forwardPorts": [18880, 9090, 3000],
+    "portsAttributes": {
+        "18880": { "label": "Aspire Dashboard" },
+        "9090": { "label": "Prometheus" },
+        "3000": { "label": "Grafana" }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
@@ -26,5 +35,8 @@
         }
     },
     "postCreateCommand": "pip install --no-cache uv github-copilot-sdk",
-    "remoteUser": "vscode"
+    "remoteUser": "vscode",
+    "remoteEnv": {
+        "SSL_CERT_DIR": "/usr/lib/ssl/certs:/home/vscode/.aspnet/dev-certs/trust"
+    }
 }
