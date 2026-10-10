@@ -154,11 +154,11 @@ Aspire Dashboardは<http://localhost:18880>で開くことができ、Aspire Das
 
 可視化ツールがAspire Dashboard、Grafana、Prometheus、Tempo、Lokiで構成されていますので順番に見ていきましょう。
 
-## Aspire Dashboard
+## Aspire DashboardでCopilot CLIの動きを観測する
 
 まずはAspire Dashboardを確認します。Aspire Dashboardは<http://localhost:18880>で開くことができ、トレース、ログ、メトリクスの3シグナルを一元的に可視化できます。Aspire DashboardのUIは、トレース、ログ、メトリクスの各画面にアクセスできるタブで構成されており、各シグナルの詳細を確認できます。
 
-## Prometheus
+## PrometheusでCopilot CLIの動きを観測する
 
 次にPrometheusです。Prometheusは<http://localhost:9090>は開きます。
 
@@ -166,7 +166,7 @@ CollectorはPrometheus exporterを`otel-collector:9464`で公開し、Prometheus
 
 PrometheusのUI: <http://localhost:9090>。`up{job="otel-collector"}`を実行すると、Collectorのexporterがscrapeできているか確認できます。Copilot CLI/SDKのメトリクスを表示するには、下記の「起動と接続」にあるTelemetry設定を行ってください。
 
-## Grafana、Tempo、Lokiを確認する
+## Grafana、Tempo、LokiでCopilot CLIの動きを観測する
 
 最後にGrafanaです。Grafanaは<http://localhost:3000>で開きます。Grafanaのユーザー名は`admin`、初期パスワードは`change-me`です。
 
