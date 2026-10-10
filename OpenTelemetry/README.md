@@ -44,7 +44,15 @@ Grafana: <http://localhost:3000>（ユーザー名 `admin`、パスワードは 
 ## 起動と接続
 
 1. 上記いずれかの `dotnet run` コマンドでスタックを起動します。
-2. Copilot CLI/SDK の OTLP HTTP endpoint を `http://localhost:4318` に設定します。CLI の設定方法は下記の [Copilot CLI OpenTelemetry monitoring](#参考) を参照してください。SDK では `TelemetryConfig` の OTLP endpoint に同じ URL を指定します。
+2. Copilot CLI からCollectorへ送信する場合は、CLIを起動する前に次を設定します。
+
+   ```bash
+   export COPILOT_OTEL_ENABLED=true
+   export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+   copilot
+   ```
+
+   `OTEL_EXPORTER_OTLP_ENDPOINT` はAspire AppHost内のDashboardではなく、OTLP/HTTPを受け付けるCollectorのURLです。SDKでは `TelemetryConfig` の OTLP endpoint に同じ `http://localhost:4318` を指定します。
 3. Aspire Dashboard は <http://localhost:18880>、Prometheus は <http://localhost:9090>、Grafana は <http://localhost:3000> で開きます。Grafana のユーザー名は `admin`、初期パスワードは `change-me` です。
 
 Prometheus が扱うのはメトリクスです。トレースやログは Aspire Dashboard で確認します。Grafana のトレース・ログ表示も必要な場合は、Tempo や Loki など対応するバックエンドを別途追加してください。
@@ -58,3 +66,4 @@ Prometheus が扱うのはメトリクスです。トレースやログは Aspir
 - [Add Telemetry Endpoint Support](https://github.com/github/copilot-cli/issues/1565)
 - [Managed telemetry.headers prevents OpenTelemetry (OTEL) export](https://github.com/github/copilot-cli/issues/4669)
 - [Feature Request: Enterprise OTel auth — mTLS env vars + dynamic-headers helper (parity with Claude Code)](https://github.com/github/copilot-cli/issues/3477)
+- [Dynamic workflows in Copilot CLI and the Copilot app](https://github.blog/changelog/2026-10-01-dynamic-workflows-in-copilot-cli-and-the-copilot-app/)

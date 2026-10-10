@@ -26,5 +26,8 @@
         }
     },
     "postCreateCommand": "pip install --no-cache uv github-copilot-sdk",
-    "remoteUser": "vscode"
+    "remoteUser": "vscode",
+    "remoteEnv": {
+        "SSL_CERT_DIR": "/usr/lib/ssl/certs:/home/vscode/.aspnet/dev-certs/trust"
+    }
 }
