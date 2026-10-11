@@ -3,6 +3,11 @@
     "build": {
         "dockerfile": "dockerfile"
     },
+    "hostRequirements": {
+        "cpus": 8,
+        "memory": "32gb",
+        "storage": "64gb"
+    },
     "features": {
         // Codespacesではこれが一番安定します
         "ghcr.io/devcontainers/features/docker-in-docker:2": {
@@ -18,11 +23,12 @@
     "mounts": [], 
     
     "runArgs": ["--add-host=host.docker.internal:host-gateway"],
-    "forwardPorts": [18880, 9090, 3000],
+    "forwardPorts": [18880, 9090, 3000, 45337],
     "portsAttributes": {
         "18880": { "label": "Aspire Dashboard" },
         "9090": { "label": "Prometheus" },
-        "3000": { "label": "Grafana" }
+        "3000": { "label": "Grafana" },
+        "45337": { "label": "Aspire AppHost" }
     },
     "customizations": {
         "vscode": {
