@@ -26,6 +26,19 @@ Python SDKではインストール後に一度だけダウンロードする手�
 python -m copilot download-runtime
 ```
 
+```bash
+# GitHub公式スクリプトでCopilot CLIをインストール
+curl -fsSL https://gh.io/copilot-install | bash
+
+# PATHを設定
+export PATH="$HOME/.local/bin:$PATH"
+
+# bashのコマンドキャッシュを更新
+hash -r
+# 動作確認
+which copilot
+```
+
 ## Getting Started
 
 [getting-started.md](https://github.com/github/copilot-sdk/blob/main/docs/getting-started.md)を参考に進めてみよう。
